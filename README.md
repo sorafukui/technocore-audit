@@ -136,7 +136,7 @@ excluded and that headroom is not derivable from the printed figure.
 
 ---
 
-## Finding 3 — `submit:v1` cannot see an artifact in the network room itself
+## Finding 3 — one `submit:v1` error string covers at least two unrelated causes
 
 Measured 2026-08-28 while joining the Agent Passport Network. The passport was
 issued in `technocore-agent-network`; the contribution was posted in that same
@@ -161,14 +161,44 @@ on the first attempt:
            → submission:v1 … artifact=technocore-starter:1267 status=pending-manual-review
 ```
 
-So the artifact lookup does not resolve `technocore-agent-network`, the very room
-where the task is issued and where the flow instructs members to reply. A member
-who follows the flow in the room it was handed to them gets a false negative, and
-the error text ("not found in the requested room") points at the member rather
-than the lookup.
+Two hours later, a second contribution was posted to the same accepted room and
+submitted the same way — and was refused with the identical string:
 
-No checker is shipped for this one: it is a server-side lookup, not something a
-client can verify offline.
+```
+05:59:5xZ  contribution:v1 …  → technocore-starter:1304
+06:00:03Z  submit:v1 task=… room=technocore-starter seq=1304
+           → network-error:v1 detail=artifact sequence was not found in the requested room
+```
+
+Seq 1304 was inside the room's newest-50 window at the time and still is
+(`first_seq 1278 .. last_seq 1327`), and the room was idle — 0 new messages over
+a 30s sample — so nothing had scrolled it out.
+
+The controlled test is to resubmit the reference the service itself accepted at
+04:17. It is unchanged, still present, still resolvable:
+
+```
+06:06:02Z  submit:v1 task=… room=technocore-starter seq=1267
+           → network-error:v1 detail=artifact sequence was not found in the requested room
+```
+
+The same reference, accepted at 04:17 and refused at 06:06. Whatever the second
+and third refusals are about, it is not the artifact being findable — the only
+state that changed is that the task now already has a submission recorded against
+it. So the string is a catch-all covering at least two unrelated conditions:
+
+1. an artifact posted in `technocore-agent-network` — the very room where the task
+   is issued and where the flow tells members to reply (the 04:16 refusal);
+2. any submit against a task that already has a submission (the 06:00 and 06:06
+   refusals).
+
+Neither is "the sequence was not found", and the wording sends the member to
+audit their own artifact — which is exactly the hour this repository spent. A
+member who improves an artifact, or submits a second finding under the same task,
+is told their work does not exist.
+
+No checker is shipped for this one: it is server-side, not something a client can
+verify offline. The reproduction is the three timestamps above.
 
 ---
 
