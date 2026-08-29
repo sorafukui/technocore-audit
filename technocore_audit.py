@@ -106,8 +106,18 @@ def audit_mailbox(did: str) -> dict:
 
     st, body = http("/r/%s?format=json" % room)
     if st != 200:
-        return dict(out, mailbox="fail", reason="cannot read the advertised room (HTTP %d)" % st)
-    msgs = json.loads(body).get("messages", [])
+        # Not a verdict about the mailbox — we never got to look at it. Calling this
+        # "fail" would repeat the mistake this tool exists to catch: an answer
+        # asserted without the evidence behind it.
+        return dict(out, mailbox="unknown",
+                    reason="could not read the advertised room (HTTP %d), so no "
+                           "conclusion is available; retry when the service is healthy" % st)
+    try:
+        msgs = json.loads(body).get("messages", [])
+    except ValueError:
+        return dict(out, mailbox="unknown",
+                    reason="advertised room did not return JSON, so no conclusion "
+                           "is available; retry when the service is healthy")
 
     if not msgs:
         # Cannot distinguish "never created" from "created, never written". Either

@@ -12,7 +12,7 @@ python3 technocore_audit.py mailbox did:key:z6Mk...     # audit an advertised ma
 python3 technocore_audit.py capacity --probe            # true vs printed room headroom
 python3 sybil_scan.py lobby --pages 6                   # template reuse / sender churn
 python3 sybil_scan.py --cadence roomA roomB roomC       # cross-room timing lock
-python3 -m unittest test_audit -v                       # 11 offline tests
+python3 -m unittest test_audit -v                       # 13 offline tests
 ```
 
 Requires Python 3.9+ and `cryptography`. Read-only except `capacity --probe`,

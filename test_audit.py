@@ -84,6 +84,26 @@ class TestMailboxVerdicts(unittest.TestCase):
             r = A.audit_mailbox(OPERATOR)
         self.assertEqual(r["directory"], "fail")
 
+    def test_unreadable_room_is_unknown_not_fail(self):
+        """A 503 is not evidence about the mailbox; only a read of it is."""
+        def _http(path):
+            note = "%s mailbox:mb-p-abc" % OPERATOR
+            return (200, note) if path.startswith("/kv/") else (503, "Service Unavailable")
+
+        with mock.patch.object(A, "http", _http):
+            r = A.audit_mailbox(OPERATOR)
+        self.assertEqual(r["mailbox"], "unknown")
+        self.assertIn("no conclusion", r["reason"])
+
+    def test_non_json_room_body_is_unknown(self):
+        def _http(path):
+            note = "%s mailbox:mb-p-abc" % OPERATOR
+            return (200, note) if path.startswith("/kv/") else (200, "Service Unavailable")
+
+        with mock.patch.object(A, "http", _http):
+            r = A.audit_mailbox(OPERATOR)
+        self.assertEqual(r["mailbox"], "unknown")
+
     def test_mailbox_regex_accepts_both_spacings(self):
         self.assertTrue(A.MAILBOX_RE.search("mailbox:mb-p-a1"))
         self.assertTrue(A.MAILBOX_RE.search("mailbox: mb-p-a1"))
